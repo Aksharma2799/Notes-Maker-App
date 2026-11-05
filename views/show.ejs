@@ -5,6 +5,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title><%= title %> - Notes Maker App</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+    <!-- Highlight.js Dark Theme CSS for Code Blocks -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/tokyo-night-dark.min.css"
+    />
+
+    <!-- Custom styling to ensure markdown elements look great inside Tailwind -->
+    <style>
+      #note-content pre {
+        background-color: #18181b; /* zinc-900 */
+        padding: 1rem;
+        border-radius: 0.5rem;
+        overflow-x: auto;
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+        border: 1px solid #27272a; /* zinc-800 */
+      }
+      #note-content code {
+        font-family:
+          ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      }
+      #note-content p {
+        margin-bottom: 0.75rem;
+      }
+      #note-content ul {
+        list-style-type: disc;
+        padding-left: 1.5rem;
+        margin-bottom: 0.75rem;
+      }
+      #note-content ol {
+        list-style-type: decimal;
+        padding-left: 1.5rem;
+        margin-bottom: 0.75rem;
+      }
+    </style>
   </head>
 
   <body class="bg-zinc-900 text-white">
@@ -32,14 +70,15 @@
 
         <hr class="border-zinc-700 mb-6" />
 
-        <!-- Message Content -->
+        <!-- Message Content (Markdown & Code Highlighted via JS) -->
         <div
-          class="text-zinc-300 text-base sm:text-lg whitespace-pre-wrap break-words leading-relaxed mb-8"
+          id="note-content"
+          class="text-zinc-300 text-base sm:text-lg leading-relaxed mb-8 break-words"
         >
           <%= message %>
         </div>
 
-        <!-- Action Buttons (Edit & Delete) -->
+        <!-- Action Buttons -->
         <div
           class="flex flex-wrap items-center gap-4 pt-4 border-t border-zinc-700"
         >
@@ -67,5 +106,27 @@
         </div>
       </div>
     </div>
+
+    <!-- Marked.js & Highlight.js Scripts -->
+
+    <!-- Highlight.js Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+    <script>
+      // Get the raw message passed from backend
+      const rawMessage = `<%- JSON.stringify(message) %>`;
+      const container = document.getElementById("note-content");
+
+      // Check if the message contains code blocks or markdown, else render with preserved line breaks
+      if (rawMessage.includes("```")) {
+        // If it has markdown code blocks, use marked.js
+        container.innerHTML = marked.parse(JSON.parse(rawMessage));
+        hljs.highlightAll();
+      } else {
+        // Otherwise, render as clean plain text preserving all spaces and newlines!
+        container.style.whiteSpace = "pre-wrap";
+        container.textContent = JSON.parse(rawMessage);
+      }
+    </script>
   </body>
 </html>

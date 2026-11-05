@@ -1,107 +1,117 @@
 const express = require("express");
 const fs = require("fs");
-const app = express();
 const path = require("path");
-const port = 3000;
 
+const app = express();
+const port = 3000;
+const FILES_DIR = path.join(__dirname, "files");
+
+// Ensure files directory exists
+if (!fs.existsSync(FILES_DIR)) {
+  fs.mkdirSync(FILES_DIR, { recursive: true });
+}
+
+// Middleware
 app.set("view engine", "ejs");
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 
+// Route: View all notes
 app.get("/", (req, res) => {
-  fs.readdir("./files", (err, files) => {
+  fs.readdir(FILES_DIR, (err, files) => {
     if (err) {
       console.error("Error reading files:", err);
       return res.status(500).send("Internal Server Error");
     }
-    res.render("index", { files: files });
+    res.render("index", { files });
   });
 });
 
+// Route: View a single note
 app.get("/files/:filename", (req, res) => {
   const filename = req.params.filename;
-  fs.readFile(`./files/${filename}`, "utf8", (err, data) => {
+  fs.readFile(path.join(FILES_DIR, filename), "utf8", (err, data) => {
     if (err) {
       console.error("Error reading file:", err);
       return res.status(404).send("File not found");
     }
-    // Pass filename along with title and message
     res.render("show", {
-      filename: filename,
-      title: filename.split(".txt")[0],
+      filename,
+      title: path.basename(filename, ".txt"),
       message: data,
     });
   });
 });
 
-// Route to render the edit page
+// Route: Render edit page
 app.get("/edit/:filename", (req, res) => {
   const filename = req.params.filename;
-  fs.readFile(`./files/${filename}`, "utf8", (err, data) => {
+  fs.readFile(path.join(FILES_DIR, filename), "utf8", (err, data) => {
     if (err) {
       console.error("Error reading file for edit:", err);
       return res.status(404).send("File not found");
     }
     res.render("edit", {
-      filename: filename,
-      title: filename.split(".txt")[0],
+      filename,
+      title: path.basename(filename, ".txt"),
       message: data,
     });
   });
 });
 
-// Route to handle updating/renaming the note
+// Route: Create new note
+app.post("/create", (req, res) => {
+  const title = req.body.title.trim();
+  const filename = `${title.split(" ").join("")}.txt`;
+
+  fs.writeFile(path.join(FILES_DIR, filename), req.body.message, (err) => {
+    if (err) {
+      console.error("Error creating file:", err);
+      return res.status(500).send("Internal Server Error");
+    }
+    res.redirect("/?success=created");
+  });
+});
+
+// Route: Update / Rename note
 app.post("/update/:filename", (req, res) => {
   const oldFilename = req.params.filename;
-  const newFilename = req.body.title.split(" ").join("") + ".txt";
+  const newTitle = req.body.title.trim();
+  const newFilename = `${newTitle.split(" ").join("")}.txt`;
+  const oldPath = path.join(FILES_DIR, oldFilename);
+  const newPath = path.join(FILES_DIR, newFilename);
 
-  // First write the new content
-  fs.writeFile(`./files/${oldFilename}`, req.body.message, (err) => {
+  fs.writeFile(oldPath, req.body.message, (err) => {
     if (err) {
       console.error("Error updating file content:", err);
       return res.status(500).send("Internal Server Error");
     }
 
-    // If the title changed, rename the file
     if (oldFilename !== newFilename) {
-      fs.rename(`./files/${oldFilename}`, `./files/${newFilename}`, (err) => {
+      fs.rename(oldPath, newPath, (err) => {
         if (err) {
           console.error("Error renaming file:", err);
           return res.status(500).send("Internal Server Error");
         }
-        res.redirect("/");
+        res.redirect("/?success=updated");
       });
     } else {
-      res.redirect("/");
+      res.redirect("/?success=updated");
     }
   });
 });
 
-// Route to delete the file
+// Route: Delete note
 app.post("/delete/:filename", (req, res) => {
   const filename = req.params.filename;
-  fs.unlink(`./files/${filename}`, (err) => {
+  fs.unlink(path.join(FILES_DIR, filename), (err) => {
     if (err) {
       console.error("Error deleting file:", err);
       return res.status(500).send("Internal Server Error");
     }
-    res.redirect("/");
+    res.redirect("/?success=deleted");
   });
-});
-
-app.post("/create", (req, res) => {
-  fs.writeFile(
-    `./files/${req.body.title.split(" ").join("")}.txt`,
-    req.body.message,
-    (err) => {
-      if (err) {
-        console.error("Error creating file:", err);
-        return res.status(500).send("Internal Server Error");
-      }
-      res.redirect("/");
-    },
-  );
 });
 
 app.listen(port, () => {

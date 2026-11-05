@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,22 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Notes Maker App</title>
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <!-- Toastify CSS & JS -->
+  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
 </head>
 
 <body class="bg-zinc-900 text-white">
 
   <div class="min-h-screen w-full px-4 py-8 sm:px-8">
 
-    <!-- Main Section -->
+    <!-- Main Form Section -->
     <div class="max-w-3xl mx-auto mb-12">
-
       <h2 class="text-center text-2xl sm:text-3xl font-bold text-blue-500 capitalize mb-8">
         Notes Maker App
       </h2>
 
-      <!-- Form -->
       <form class="flex flex-col gap-5" action="/create" method="POST">
-
         <input
           class="w-full px-5 py-3 bg-zinc-800 border border-zinc-600 rounded-lg
                  focus:outline-none focus:ring-2 focus:ring-blue-500
@@ -50,66 +49,75 @@
         >
           Create Note
         </button>
-
       </form>
     </div>
 
-    <!-- Notes Section -->
+    <!-- Notes List Section -->
     <div class="max-w-7xl mx-auto">
-
       <h2 class="text-xl sm:text-2xl font-bold mb-6 text-zinc-200">
         Your Notes
       </h2>
 
       <% if (files.length > 0) { %>
-
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-
           <% files.forEach((file) => { %>
-
-            <div class="bg-zinc-800 p-5 rounded-xl shadow-lg
-                        border border-zinc-700
+            <div class="bg-zinc-800 p-5 rounded-xl shadow-lg border border-zinc-700
                         hover:border-blue-500 hover:-translate-y-1
-                        transition duration-300 min-w-0">
-
-              <h3 class="text-lg font-bold text-blue-400 truncate mb-3">
-                <%= file %>
-              </h3>
-
-              <p class="text-sm text-zinc-300 break-words mb-5">
-                <%= file %>
-              </p>
-
-              <a
-                href="/files/<%= encodeURIComponent(file) %>"
-                class="inline-block text-sm font-semibold text-blue-400
-                       hover:text-blue-300 transition-colors"
-              >
-                Show More →
-              </a>
-
+                        transition duration-300 min-w-0 flex flex-col justify-between">
+              <div>
+                <h3 class="text-lg font-bold text-blue-400 truncate mb-3">
+                  <%= file %>
+                </h3>
+              </div>
+              <div>
+                <a
+                  href="/files/<%= encodeURIComponent(file) %>"
+                  class="inline-block text-sm font-semibold text-blue-400
+                         hover:text-blue-300 transition-colors mt-2"
+                >
+                  Show More →
+                </a>
+              </div>
             </div>
-
           <% }); %>
-
         </div>
-
       <% } else { %>
-
-        <div class="flex justify-center items-center py-16
-                    border border-dashed border-zinc-700 rounded-xl">
-
+        <div class="flex justify-center items-center py-16 border border-dashed border-zinc-700 rounded-xl">
           <p class="text-zinc-400 italic text-base">
             No files available. Create your first note!
           </p>
-
         </div>
-
       <% } %>
-
     </div>
 
   </div>
 
+
+  <!-- Toastify Notification Handler Script -->
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const status = urlParams.get('success');
+
+    if (status) {
+      let message = "Action completed successfully!";
+      if (status === 'created') message = "Note created successfully!";
+      if (status === 'updated') message = "Note updated successfully!";
+      if (status === 'deleted') message = "Note deleted successfully!";
+
+      Toastify({
+        text: message,
+        duration: 3000,
+        gravity: "bottom",      // Changes position to bottom
+        position: "right",     // Sets position to right
+        style: {
+          background: "#2563eb", // Tailwind blue-600
+        },
+        stopOnFocus: true
+      }).showToast();          // Make sure it's .showToast() instead of .show()
+
+      // Clean URL query parameters without reloading page
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  </script>
 </body>
 </html>

@@ -1,0 +1,11 @@
+### Sample 2: Python Snippet & Software Engineering Quote
+* **Title:** `Python Error Handling`
+* **Message:**
+```markdown
+Handling exceptions gracefully is crucial in Python applications:
+
+```python
+try:
+    result = 10 / 0
+except ZeroDivisionError as e:
+    print(f"Caught an error: {e}")
