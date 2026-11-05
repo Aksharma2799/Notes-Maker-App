@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Edit Note - Notes Maker App</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  </head>
+
+  <body class="bg-zinc-900 text-white">
+    <div class="min-h-screen w-full px-4 py-8 sm:px-8">
+      <div class="max-w-3xl mx-auto mb-12">
+        <!-- Navigation / Back Button -->
+        <div class="mb-8">
+          <a
+            href="/"
+            class="inline-flex items-center gap-2 text-sm font-semibold text-blue-400 hover:text-blue-300 transition-colors"
+          >
+            ← Back to All Notes
+          </a>
+        </div>
+
+        <h2
+          class="text-center text-2xl sm:text-3xl font-bold text-blue-500 capitalize mb-8"
+        >
+          Edit Note
+        </h2>
+
+        <!-- Edit Form -->
+        <form
+          class="flex flex-col gap-5"
+          action="/update/<%= encodeURIComponent(filename) %>"
+          method="POST"
+        >
+          <input
+            class="w-full px-5 py-3 bg-zinc-800 border border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-zinc-400 text-white"
+            type="text"
+            placeholder="Enter your title"
+            name="title"
+            value="<%= title %>"
+            required
+          />
+
+          <textarea
+            class="w-full px-5 py-3 bg-zinc-800 border border-zinc-600 rounded-lg resize-none h-48 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-zinc-400"
+            placeholder="Enter your message"
+            name="message"
+            required
+          >
+<%= message %></textarea
+          >
+
+          <button
+            class="w-full sm:w-auto self-start bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition duration-300 cursor-pointer"
+            type="submit"
+          >
+            Update Note
+          </button>
+        </form>
+      </div>
+    </div>
+  </body>
+</html>
