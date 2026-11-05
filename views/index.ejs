@@ -1,0 +1,115 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Notes Maker App</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+
+<body class="bg-zinc-900 text-white">
+
+  <div class="min-h-screen w-full px-4 py-8 sm:px-8">
+
+    <!-- Main Section -->
+    <div class="max-w-3xl mx-auto mb-12">
+
+      <h2 class="text-center text-2xl sm:text-3xl font-bold text-blue-500 capitalize mb-8">
+        Notes Maker App
+      </h2>
+
+      <!-- Form -->
+      <form class="flex flex-col gap-5" action="/create" method="POST">
+
+        <input
+          class="w-full px-5 py-3 bg-zinc-800 border border-zinc-600 rounded-lg
+                 focus:outline-none focus:ring-2 focus:ring-blue-500
+                 focus:border-transparent placeholder:text-zinc-400"
+          type="text"
+          placeholder="Enter your title"
+          name="title"
+          required
+        />
+
+        <textarea
+          class="w-full px-5 py-3 bg-zinc-800 border border-zinc-600
+                 rounded-lg resize-none h-36
+                 focus:outline-none focus:ring-2 focus:ring-blue-500
+                 placeholder:text-zinc-400"
+          placeholder="Enter your message"
+          name="message"
+          required
+        ></textarea>
+
+        <button
+          class="w-full sm:w-auto self-start bg-blue-600 hover:bg-blue-700
+                 text-white font-semibold py-3 px-8 rounded-lg
+                 transition duration-300 cursor-pointer"
+          type="submit"
+        >
+          Create Note
+        </button>
+
+      </form>
+    </div>
+
+    <!-- Notes Section -->
+    <div class="max-w-7xl mx-auto">
+
+      <h2 class="text-xl sm:text-2xl font-bold mb-6 text-zinc-200">
+        Your Notes
+      </h2>
+
+      <% if (files.length > 0) { %>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+
+          <% files.forEach((file) => { %>
+
+            <div class="bg-zinc-800 p-5 rounded-xl shadow-lg
+                        border border-zinc-700
+                        hover:border-blue-500 hover:-translate-y-1
+                        transition duration-300 min-w-0">
+
+              <h3 class="text-lg font-bold text-blue-400 truncate mb-3">
+                <%= file %>
+              </h3>
+
+              <p class="text-sm text-zinc-300 break-words mb-5">
+                <%= file %>
+              </p>
+
+              <a
+                href="/files/<%= encodeURIComponent(file) %>"
+                class="inline-block text-sm font-semibold text-blue-400
+                       hover:text-blue-300 transition-colors"
+              >
+                Show More →
+              </a>
+
+            </div>
+
+          <% }); %>
+
+        </div>
+
+      <% } else { %>
+
+        <div class="flex justify-center items-center py-16
+                    border border-dashed border-zinc-700 rounded-xl">
+
+          <p class="text-zinc-400 italic text-base">
+            No files available. Create your first note!
+          </p>
+
+        </div>
+
+      <% } %>
+
+    </div>
+
+  </div>
+
+</body>
+</html>
