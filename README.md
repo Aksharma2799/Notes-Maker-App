@@ -70,7 +70,9 @@ The application provides a simple interface where users can enter a note title a
 
 ## 👨‍💻 Author
 
-Developed as a full-stack web development practice project.
+**Ashish**
+
+Developed with ❤️ by Ashish as a full-stack web development practice project.
 
 ---
 
