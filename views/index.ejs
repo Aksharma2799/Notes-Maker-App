@@ -17,7 +17,7 @@
     <!-- Main Form Section -->
     <div class="max-w-3xl mx-auto mb-12">
       <h2 class="text-center text-2xl sm:text-3xl font-bold text-blue-500 capitalize mb-8">
-        Notes Maker App
+        Notes Maker App (AI-Powered)
       </h2>
 
       <form class="flex flex-col gap-5" action="/create" method="POST">
@@ -47,7 +47,7 @@
                  transition duration-300 cursor-pointer"
           type="submit"
         >
-          Create Note
+          Create Note & Auto-Tag ✨
         </button>
       </form>
     </div>
@@ -65,10 +65,22 @@
                         hover:border-blue-500 hover:-translate-y-1
                         transition duration-300 min-w-0 flex flex-col justify-between">
               <div>
-                <h3 class="text-lg font-bold text-blue-400 truncate mb-3">
-                  <%= file %>
+                <h3 class="text-lg font-bold text-white truncate mb-2">
+                  <%= file.replace('.txt', '') %>
                 </h3>
+                
+                <!-- Display Auto Tags -->
+                <% if (tagsData && tagsData[file]) { %>
+                  <div class="flex flex-wrap gap-1 mb-3">
+                    <% tagsData[file].forEach(tag => { %>
+                      <span class="bg-blue-900/60 text-blue-300 text-xs px-2 py-0.5 rounded-full border border-blue-700/50">
+                        #<%= tag %>
+                      </span>
+                    <% }) %>
+                  </div>
+                <% } %>
               </div>
+
               <div>
                 <a
                   href="/files/<%= encodeURIComponent(file) %>"
@@ -92,30 +104,28 @@
 
   </div>
 
-
-  <!-- Toastify Notification Handler Script -->
+  <!-- Toast Notification Handler Script -->
   <script>
     const urlParams = new URLSearchParams(window.location.search);
     const status = urlParams.get('success');
 
     if (status) {
       let message = "Action completed successfully!";
-      if (status === 'created') message = "Note created successfully!";
+      if (status === 'created') message = "Note created with AI tags successfully!";
       if (status === 'updated') message = "Note updated successfully!";
       if (status === 'deleted') message = "Note deleted successfully!";
 
       Toastify({
         text: message,
         duration: 3000,
-        gravity: "bottom",      // Changes position to bottom
-        position: "right",     // Sets position to right
+        gravity: "bottom",
+        position: "right",
         style: {
-          background: "#2563eb", // Tailwind blue-600
+          background: "#2563eb",
         },
         stopOnFocus: true
-      }).showToast();          // Make sure it's .showToast() instead of .show()
+      }).showToast();
 
-      // Clean URL query parameters without reloading page
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   </script>

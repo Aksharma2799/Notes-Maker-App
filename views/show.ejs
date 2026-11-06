@@ -14,20 +14,18 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/tokyo-night-dark.min.css"
     />
 
-    <!-- Custom styling to ensure markdown elements look great inside Tailwind -->
     <style>
       #note-content pre {
-        background-color: #18181b; /* zinc-900 */
+        background-color: #18181b;
         padding: 1rem;
         border-radius: 0.5rem;
         overflow-x: auto;
         margin-top: 1rem;
         margin-bottom: 1rem;
-        border: 1px solid #27272a; /* zinc-800 */
+        border: 1px solid #27272a;
       }
       #note-content code {
-        font-family:
-          ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       }
       #note-content p {
         margin-bottom: 0.75rem;
@@ -42,31 +40,88 @@
         padding-left: 1.5rem;
         margin-bottom: 0.75rem;
       }
+      #note-content blockquote {
+        border-left: 4px solid #3b82f6;
+        padding-left: 1rem;
+        margin: 1rem 0;
+        color: #94a3b8;
+        font-style: italic;
+      }
     </style>
   </head>
 
-  <body class="bg-zinc-900 text-white">
+  <body class="bg-zinc-900 text-white relative min-h-screen">
     <div class="min-h-screen w-full px-4 py-8 sm:px-8 max-w-4xl mx-auto">
-      <!-- Navigation / Back Button -->
-      <div class="mb-8">
+      
+      <!-- Top Navigation & Action Bar -->
+      <div class="flex items-center justify-between mb-8">
         <a
           href="/"
           class="inline-flex items-center gap-2 text-sm font-semibold text-blue-400 hover:text-blue-300 transition-colors"
         >
           ← Back to All Notes
         </a>
+
+        <!-- Rounded AI Action Buttons with Hover Tooltips -->
+        <div class="flex items-center gap-4">
+          
+          <!-- 1. AI Grammar & Markdown Fixer (Rounded Icon + Tooltip) -->
+          <div class="relative group">
+            <form action="/ai-fix/<%= encodeURIComponent(filename) %>" method="POST">
+              <button
+                type="submit"
+                class="w-12 h-12 rounded-full bg-purple-600 hover:bg-purple-700 text-white flex items-center justify-center text-xl shadow-lg transition duration-300 cursor-pointer active:scale-95"
+              >
+                ✨
+              </button>
+            </form>
+            
+            <!-- Tooltip -->
+            <div class="absolute right-0 top-14 hidden group-hover:flex flex-col w-60 p-3 bg-zinc-800 text-xs rounded-lg shadow-xl border border-zinc-700 z-30 pointer-events-none">
+              <span class="font-bold text-purple-400 text-sm mb-1">Fix & Format Note</span>
+              <span class="text-zinc-300">Instantly fix grammar and convert plain text into clean Markdown headings and lists.</span>
+            </div>
+          </div>
+
+          <!-- 2. Ask AI Popup Trigger (Rounded Icon + Tooltip) -->
+          <div class="relative group">
+            <button
+              id="open-ai-chat-btn"
+              type="button"
+              class="w-12 h-12 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center text-xl shadow-lg transition duration-300 cursor-pointer active:scale-95"
+            >
+              💬
+            </button>
+
+            <!-- Tooltip -->
+            <div class="absolute right-0 top-14 hidden group-hover:flex flex-col w-60 p-3 bg-zinc-800 text-xs rounded-lg shadow-xl border border-zinc-700 z-30 pointer-events-none">
+              <span class="font-bold text-blue-400 text-sm mb-1">Ask AI (Q&A)</span>
+              <span class="text-zinc-300">Open an interactive popup box to ask questions specifically about this note.</span>
+            </div>
+          </div>
+
+        </div>
       </div>
 
       <!-- Note Detail Card -->
-      <div
-        class="bg-zinc-800 p-6 sm:p-8 rounded-xl shadow-lg border border-zinc-700"
-      >
-        <!-- Title -->
-        <h1
-          class="text-2xl sm:text-3xl font-bold text-blue-400 mb-6 break-words"
-        >
-          <%= title %>
-        </h1>
+      <div class="bg-zinc-800 p-6 sm:p-8 rounded-xl shadow-lg border border-zinc-700">
+        
+        <!-- Title and Tags Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <h1 id="note-title" class="text-2xl sm:text-3xl font-bold text-white break-words">
+            <%= title %>
+          </h1>
+
+          <% if (tags && tags.length > 0) { %>
+            <div class="flex flex-wrap gap-1">
+              <% tags.forEach(tag => { %>
+                <span class="bg-blue-900/60 text-blue-300 text-xs px-2.5 py-1 rounded-full border border-blue-700/50">
+                  #<%= tag %>
+                </span>
+              <% }) %>
+            </div>
+          <% } %>
+        </div>
 
         <hr class="border-zinc-700 mb-6" />
 
@@ -79,9 +134,7 @@
         </div>
 
         <!-- Action Buttons -->
-        <div
-          class="flex flex-wrap items-center gap-4 pt-4 border-t border-zinc-700"
-        >
+        <div class="flex flex-wrap items-center gap-4 pt-4 border-t border-zinc-700">
           <a
             href="/edit/<%= encodeURIComponent(filename) %>"
             class="bg-amber-600 hover:bg-amber-700 text-white font-semibold py-2 px-5 rounded-lg transition duration-300 text-sm"
@@ -92,9 +145,7 @@
           <form
             action="/delete/<%= encodeURIComponent(filename) %>"
             method="POST"
-            onsubmit="
-              return confirm('Are you sure you want to delete this note?');
-            "
+            onsubmit="return confirm('Are you sure you want to delete this note?');"
           >
             <button
               type="submit"
@@ -107,26 +158,120 @@
       </div>
     </div>
 
-    <!-- Marked.js & Highlight.js Scripts -->
+    <!-- AI Chat Popup Modal Overlay -->
+    <div
+      id="ai-modal-overlay"
+      class="<%= (aiAnswer || aiError) ? 'flex' : 'hidden' %> fixed inset-0 bg-black/70 backdrop-blur-xs z-50 items-center justify-center p-4"
+    >
+      <div class="bg-zinc-800 border border-zinc-700 w-full max-w-xl rounded-2xl shadow-2xl p-6 relative flex flex-col gap-4">
+        
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between pb-3 border-b border-zinc-700">
+          <h3 class="text-lg font-bold text-blue-400 flex items-center gap-2">
+            💬 Ask AI About This Note
+          </h3>
+          <button
+            id="close-ai-chat-btn"
+            type="button"
+            class="text-zinc-400 hover:text-white text-xl font-bold p-1 cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
 
-    <!-- Highlight.js Scripts -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+        <!-- Server Busy / Error Notification Box -->
+        <% if (aiError) { %>
+          <div class="p-4 bg-amber-950/40 border border-amber-500/50 rounded-xl text-amber-300 text-sm flex items-center gap-2">
+            <span><%= aiError %></span>
+          </div>
+        <% } %>
 
+        <!-- Previous AI Answer Display (if available) -->
+        <% if (aiAnswer) { %>
+          <div class="max-h-60 overflow-y-auto p-4 bg-zinc-900/80 border border-blue-500/40 rounded-xl space-y-2">
+            <p class="text-xs font-semibold text-zinc-400">Your Question: <span class="text-zinc-200 font-normal"><%= userQuestion %></span></p>
+            <hr class="border-zinc-800" />
+            <p class="text-xs font-bold text-blue-400 uppercase tracking-wider">AI Answer:</p>
+            <p class="text-zinc-200 text-sm leading-relaxed"><%= aiAnswer %></p>
+          </div>
+        <% } %>
+
+        <!-- Chat Question Form -->
+        <form action="/ai-chat/<%= encodeURIComponent(filename) %>" method="POST" class="flex flex-col gap-3">
+          <textarea
+            name="question"
+            rows="3"
+            placeholder="Type your question about this note content..."
+            class="w-full px-4 py-3 bg-zinc-900 border border-zinc-700 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-zinc-500 resize-none"
+            required
+          ><%= userQuestion %></textarea>
+
+          <div class="flex items-center justify-end gap-3">
+            <button
+              id="cancel-ai-chat-btn"
+              type="button"
+              class="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-zinc-200 text-sm font-semibold rounded-lg transition duration-300 cursor-pointer"
+            >
+              Close
+            </button>
+            <button
+              type="submit"
+              class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition duration-300 cursor-pointer flex items-center gap-2"
+            >
+              Submit Question
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+
+    <!-- Script Section -->
     <script>
-      // Get the raw message passed from backend
+      // 1. Format Title: Remove .txt and add space before capital letters
+      const rawTitle = "<%= title %>";
+      const cleanTitle = rawTitle
+        .replace(/\.txt$/i, "")
+        .replace(/([A-Z])/g, " $1")
+        .trim();
+      document.getElementById("note-title").textContent = cleanTitle;
+
+      // 2. Parse Markdown/Code Content
       const rawMessage = `<%- JSON.stringify(message) %>`;
       const container = document.getElementById("note-content");
+      const parsedMessage = JSON.parse(rawMessage);
 
-      // Check if the message contains code blocks or markdown, else render with preserved line breaks
-      if (rawMessage.includes("```")) {
-        // If it has markdown code blocks, use marked.js
-        container.innerHTML = marked.parse(JSON.parse(rawMessage));
+      if (parsedMessage.includes("```") || parsedMessage.includes("#") || parsedMessage.includes(">")) {
+        container.innerHTML = marked.parse(parsedMessage);
         hljs.highlightAll();
       } else {
-        // Otherwise, render as clean plain text preserving all spaces and newlines!
         container.style.whiteSpace = "pre-wrap";
-        container.textContent = JSON.parse(rawMessage);
+        container.textContent = parsedMessage;
       }
+
+      // 3. AI Popup Modal Logic
+      const modalOverlay = document.getElementById("ai-modal-overlay");
+      const openModalBtn = document.getElementById("open-ai-chat-btn");
+      const closeModalBtn = document.getElementById("close-ai-chat-btn");
+      const cancelModalBtn = document.getElementById("cancel-ai-chat-btn");
+
+      openModalBtn.addEventListener("click", () => {
+        modalOverlay.classList.remove("hidden");
+        modalOverlay.classList.add("flex");
+      });
+
+      const closeModal = () => {
+        modalOverlay.classList.remove("flex");
+        modalOverlay.classList.add("hidden");
+      };
+
+      closeModalBtn.addEventListener("click", closeModal);
+      cancelModalBtn.addEventListener("click", closeModal);
+
+      // Close modal on outside backdrop click
+      modalOverlay.addEventListener("click", (e) => {
+        if (e.target === modalOverlay) closeModal();
+      });
     </script>
   </body>
 </html>
