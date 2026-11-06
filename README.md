@@ -1,4 +1,3 @@
-
 # 📝 Notes Maker App
 
 A simple and responsive Notes Maker Web Application built using **Node.js, Express.js, EJS, and Tailwind CSS**.
@@ -66,7 +65,18 @@ The application provides a simple interface where users can enter a note title a
 - Working with EJS templates.
 - Handling POST requests and form submissions.
 - Implementing responsive layouts using Tailwind CSS.
+- Added AI features for grammatical error and help.
 - Practicing file handling and backend development.
+
+## 📸 Screenshots
+
+### 1. Home Dashboard (with AI Auto-Tags)
+
+![Home Dashboard](./assets/home-preview.png)
+
+### 2. Note Detail View (with AI Features & Chat Modal)
+
+![Note View](./assets/note-view-preview.png)
 
 ## 👨‍💻 Author
 

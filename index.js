@@ -37,13 +37,12 @@ async function generateWithRetry(prompt, retries = 3, delay = 2000) {
       const result = await model.generateContent(prompt);
       return result;
     } catch (error) {
-      // Check if it's a 503 Service Unavailable / High Demand error
       if (error.status === 503 && i < retries - 1) {
         console.warn(
           `⚠️ Gemini server busy (503). Retrying attempt ${i + 1} in ${delay}ms...`,
         );
         await new Promise((resolve) => setTimeout(resolve, delay));
-        delay *= 2; // Double the delay each time (Exponential Backoff)
+        delay *= 2;
       } else {
         throw error;
       }
@@ -72,7 +71,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 
-// Route: View all notes (with tags)
+// Route: View all notes
 app.get("/", (req, res) => {
   fs.readdir(FILES_DIR, (err, files) => {
     if (err) {
@@ -121,34 +120,26 @@ app.get("/edit/:filename", (req, res) => {
   });
 });
 
-// Route: Create new note (with AI Auto-Tagging & Retry)
-app.post("/create", async (req, res) => {
+// Route: Create new note (Instantaneous, no AI lag)
+app.post("/create", (req, res) => {
   const title = req.body.title.trim();
   const message = req.body.message;
   const filename = `${title.split(" ").join("")}.txt`;
 
-  try {
-    const prompt = `Analyze this note and generate 1 to 3 short category tags (e.g., Programming, Grocery, Ideas, Database, Personal). Return ONLY the tags separated by commas, with no extra text:\nTitle: ${title}\nContent: ${message}`;
+  // Save note immediately without waiting for AI
+  fs.writeFile(path.join(FILES_DIR, filename), message, (err) => {
+    if (err) {
+      console.error("Error creating file:", err);
+      return res.status(500).send("Internal Server Error");
+    }
 
-    const aiResult = await generateWithRetry(prompt);
-    const tagsText = aiResult.response.text().trim();
-    const generatedTags = tagsText
-      .split(",")
-      .map((t) => t.trim())
-      .filter(Boolean);
-
-    fs.writeFileSync(path.join(FILES_DIR, filename), message);
-
+    // Assign a default tag instantly
     const tagsData = getTagsData();
-    tagsData[filename] = generatedTags.length > 0 ? generatedTags : ["General"];
+    tagsData[filename] = ["Note"];
     saveTagsData(tagsData);
 
     res.redirect("/?success=created");
-  } catch (error) {
-    console.error("AI Auto-Tag Error (Fallback saving note):", error.message);
-    fs.writeFileSync(path.join(FILES_DIR, filename), message);
-    res.redirect("/?success=created");
-  }
+  });
 });
 
 // Route: Update / Rename note
@@ -196,7 +187,7 @@ app.post("/delete/:filename", (req, res) => {
   });
 });
 
-// AI Feature 1: Grammar & Markdown Fixer (with Retry)
+// AI Feature 1: Grammar & Markdown Fixer (Only runs when clicking the ✨ button)
 app.post("/ai-fix/:filename", async (req, res) => {
   const filename = req.params.filename;
   const filePath = path.join(FILES_DIR, filename);
@@ -223,7 +214,7 @@ app.post("/ai-fix/:filename", async (req, res) => {
   });
 });
 
-// AI Feature 2: Chat / Q&A over Note (with safe error handling & retry)
+// AI Feature 2: Chat / Q&A over Note (Only runs when clicking the 💬 button & submitting)
 app.post("/ai-chat/:filename", async (req, res) => {
   const filename = req.params.filename;
   const userQuestion = req.body.question;
@@ -252,7 +243,6 @@ app.post("/ai-chat/:filename", async (req, res) => {
     } catch (error) {
       console.error("❌ AI Chat Error Details:", error);
 
-      // Pass a friendly warning message to the view modal if service is busy
       const errorMessage =
         error.status === 503 || error.message.includes("503")
           ? "⚠️ Service is busy right now due to high demand. Please try again in a few seconds!"

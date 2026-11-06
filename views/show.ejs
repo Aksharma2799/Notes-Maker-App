@@ -65,7 +65,7 @@
         <!-- Rounded AI Action Buttons with Hover Tooltips -->
         <div class="flex items-center gap-4">
           
-          <!-- 1. AI Grammar & Markdown Fixer (Rounded Icon + Tooltip) -->
+          <!-- 1. AI Grammar & Markdown Fixer -->
           <div class="relative group">
             <form action="/ai-fix/<%= encodeURIComponent(filename) %>" method="POST">
               <button
@@ -76,14 +76,13 @@
               </button>
             </form>
             
-            <!-- Tooltip -->
             <div class="absolute right-0 top-14 hidden group-hover:flex flex-col w-60 p-3 bg-zinc-800 text-xs rounded-lg shadow-xl border border-zinc-700 z-30 pointer-events-none">
               <span class="font-bold text-purple-400 text-sm mb-1">Fix & Format Note</span>
               <span class="text-zinc-300">Instantly fix grammar and convert plain text into clean Markdown headings and lists.</span>
             </div>
           </div>
 
-          <!-- 2. Ask AI Popup Trigger (Rounded Icon + Tooltip) -->
+          <!-- 2. Ask AI Popup Trigger -->
           <div class="relative group">
             <button
               id="open-ai-chat-btn"
@@ -93,7 +92,6 @@
               💬
             </button>
 
-            <!-- Tooltip -->
             <div class="absolute right-0 top-14 hidden group-hover:flex flex-col w-60 p-3 bg-zinc-800 text-xs rounded-lg shadow-xl border border-zinc-700 z-30 pointer-events-none">
               <span class="font-bold text-blue-400 text-sm mb-1">Ask AI (Q&A)</span>
               <span class="text-zinc-300">Open an interactive popup box to ask questions specifically about this note.</span>
@@ -125,12 +123,24 @@
 
         <hr class="border-zinc-700 mb-6" />
 
-        <!-- Message Content (Markdown & Code Highlighted via JS) -->
+        <!-- Message Content Container -->
         <div
           id="note-content"
-          class="text-zinc-300 text-base sm:text-lg leading-relaxed mb-8 break-words"
+          class="text-zinc-300 text-base sm:text-lg leading-relaxed mb-6 break-words"
         >
           <%= message %>
+        </div>
+
+        <!-- Read More / Read Less Toggle Button (Hidden by default, shown via JS if > 250 words) -->
+        <div id="read-more-container" class="hidden mb-6">
+          <button
+            id="read-more-btn"
+            type="button"
+            class="text-blue-400 hover:text-blue-300 font-semibold text-sm inline-flex items-center gap-1 cursor-pointer transition-colors"
+          >
+            <span>Read More</span>
+            <span id="read-more-arrow">↓</span>
+          </button>
         </div>
 
         <!-- Action Buttons -->
@@ -186,7 +196,7 @@
           </div>
         <% } %>
 
-        <!-- Previous AI Answer Display (if available) -->
+        <!-- Previous AI Answer Display -->
         <% if (aiAnswer) { %>
           <div class="max-h-60 overflow-y-auto p-4 bg-zinc-900/80 border border-blue-500/40 rounded-xl space-y-2">
             <p class="text-xs font-semibold text-zinc-400">Your Question: <span class="text-zinc-200 font-normal"><%= userQuestion %></span></p>
@@ -227,8 +237,9 @@
     </div>
 
     <!-- Script Section -->
+    <!-- Script Section -->
     <script>
-      // 1. Format Title: Remove .txt and add space before capital letters
+      // 1. Format Title
       const rawTitle = "<%= title %>";
       const cleanTitle = rawTitle
         .replace(/\.txt$/i, "")
@@ -236,18 +247,61 @@
         .trim();
       document.getElementById("note-title").textContent = cleanTitle;
 
-      // 2. Parse Markdown/Code Content
+      // 2. Parse Markdown/Code Content & Handle Expand/Collapse
       const rawMessage = `<%- JSON.stringify(message) %>`;
       const container = document.getElementById("note-content");
       const parsedMessage = JSON.parse(rawMessage);
 
-      if (parsedMessage.includes("```") || parsedMessage.includes("#") || parsedMessage.includes(">")) {
-        container.innerHTML = marked.parse(parsedMessage);
-        hljs.highlightAll();
-      } else {
-        container.style.whiteSpace = "pre-wrap";
-        container.textContent = parsedMessage;
-      }
+      // Render full markdown content
+      container.innerHTML = marked.parse(parsedMessage);
+      hljs.highlightAll();
+
+      // Check if the content is long enough to need a "Read More" button
+      // (e.g., if content height is greater than ~350px or has many lines)
+      const readMoreContainer = document.getElementById("read-more-container");
+      
+      // We wrap container content or check scrollHeight
+      // Let's add a max-height toggle class to container
+      setTimeout(() => {
+        if (container.scrollHeight > 350) {
+          container.classList.add("max-h-[350px]", "overflow-hidden", "relative");
+          
+          // Add a nice gradient fade at the bottom when collapsed
+          const fadeDiv = document.createElement("div");
+          fadeDiv.id = "content-fade";
+          fadeDiv.className = "absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-zinc-800 to-transparent pointer-events-none";
+          container.appendChild(fadeDiv);
+
+          readMoreContainer.classList.remove("hidden");
+        }
+      }, 50);
+
+      const readMoreBtn = document.getElementById("read-more-btn");
+      const readMoreArrow = document.getElementById("read-more-arrow");
+      let isExpanded = false;
+
+      readMoreBtn.addEventListener("click", () => {
+        isExpanded = !isExpanded;
+        const fadeDiv = document.getElementById("content-fade");
+        
+        if (isExpanded) {
+          container.classList.remove("max-h-[350px]", "overflow-hidden");
+          if (fadeDiv) fadeDiv.remove();
+          readMoreBtn.querySelector("span").textContent = "Read Less";
+          readMoreArrow.textContent = "↑";
+        } else {
+          container.classList.add("max-h-[350px]", "overflow-hidden");
+          if (!document.getElementById("content-fade")) {
+            const newFade = document.createElement("div");
+            newFade.id = "content-fade";
+            newFade.className = "absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-zinc-800 to-transparent pointer-events-none";
+            container.appendChild(newFade);
+          }
+          readMoreBtn.querySelector("span").textContent = "Read More";
+          readMoreArrow.textContent = "↓";
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      });
 
       // 3. AI Popup Modal Logic
       const modalOverlay = document.getElementById("ai-modal-overlay");
@@ -268,7 +322,6 @@
       closeModalBtn.addEventListener("click", closeModal);
       cancelModalBtn.addEventListener("click", closeModal);
 
-      // Close modal on outside backdrop click
       modalOverlay.addEventListener("click", (e) => {
         if (e.target === modalOverlay) closeModal();
       });
