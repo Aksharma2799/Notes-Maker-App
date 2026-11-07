@@ -22,6 +22,7 @@ This application allows users to create and view notes with a clean, modern, and
 - Node.js
 - Express.js
 - EJS
+- Google Gemini(API Key)
 
 ## 📸 Project Overview
 
